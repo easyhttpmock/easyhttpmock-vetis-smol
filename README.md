@@ -9,7 +9,7 @@ This crate provides the core functionality for creating HTTP mock servers using 
 Add EasyHttpMock Vetis Smol to your `Cargo.toml`:
 
 ```toml
-easyhttpmock-vetis-smol = { version = "0.1.0-beta.3", features = ["http2", "rust-tls"] }
+easyhttpmock-vetis-smol = { version = "0.1.2", features = ["rust-tls"] }
 macro_rules_attribute = "0.2.2"
 smol = { version = "2.0.2", default-features = false }
 smol-macros = { version = "0.1.1", default-features = false }

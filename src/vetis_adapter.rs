@@ -2,16 +2,19 @@ use caramelo::expect;
 use easyhttpmock::{
     errors::{EasyHttpMockError, MockError, ServerError},
     mock::{Mock, Request},
-    server::{generate_randon_port, PortGenerator, ServerAdapter},
+    server::ServerAdapter,
     HttpMockResult,
 };
 use http::Version;
 use http_body_util::BodyExt;
 use std::{net::IpAddr, sync::Arc};
 use vetis_smol::{
-    handler_fn,
-    host::{path::HandlerPath, HostImpl},
-    Response, ServerConfig, Vetis, VetisServer,
+    errors::VetisError,
+    host::{
+        path::{handler_fn, HandlerPath},
+        Host,
+    },
+    Response, Tls, Vetis, VetisListener, VetisServer,
 };
 
 /// Builder for VetisAdapterConfig
@@ -23,15 +26,18 @@ pub struct VetisAdapterConfigBuilder {
     cert: Option<Vec<u8>>,
     key: Option<Vec<u8>>,
     ca: Option<Vec<u8>>,
+    allow_unsafe_connections: bool,
 }
 
 impl VetisAdapterConfigBuilder {
     /// Sets the hostname for the server.
     ///
     /// # Arguments
+    ///
     /// * `hostname` - The hostname to set.
     ///
     /// # Returns
+    ///
     /// A new `VetisAdapterConfigBuilder` instance with the hostname set.
     pub fn hostname(mut self, hostname: &str) -> Self {
         self.hostname = hostname.to_string();
@@ -41,21 +47,25 @@ impl VetisAdapterConfigBuilder {
     /// Sets the interface for the server.
     ///
     /// # Arguments
+    ///
     /// * `interface` - The interface to set.
     ///
     /// # Returns
+    ///
     /// A new `VetisAdapterConfigBuilder` instance with the interface set.
     pub fn interface(mut self, interface: IpAddr) -> Self {
         self.interface = interface;
         self
     }
 
-    /// Sets the protocol_version for the server.
+    /// Sets the protocol for the server.
     ///
     /// # Arguments
-    /// * `protocol_version` - The protocol version to set.
+    ///
+    /// * `protos` - The protocol version to set.
     ///
     /// # Returns
+    ///
     /// A new `VetisAdapterConfigBuilder` instance with the protocol version set.
     pub fn protos(mut self, protos: Vec<Version>) -> Self {
         self.protos = protos;
@@ -65,9 +75,11 @@ impl VetisAdapterConfigBuilder {
     /// Sets the port for the server.
     ///
     /// # Arguments
+    ///
     /// * `port` - The port to set.
     ///
     /// # Returns
+    ///
     /// A new `VetisAdapterConfigBuilder` instance with the port set.
     pub fn port(mut self, port: u16) -> Self {
         self.port = port;
@@ -77,9 +89,11 @@ impl VetisAdapterConfigBuilder {
     /// Sets the certificate for the server.
     ///
     /// # Arguments
+    ///
     /// * `cert` - The certificate to set.
     ///
     /// # Returns
+    ///
     /// A new `VetisAdapterConfigBuilder` instance with the certificate set.
     pub fn cert(mut self, cert: Vec<u8>) -> Self {
         self.cert = Some(cert);
@@ -89,9 +103,11 @@ impl VetisAdapterConfigBuilder {
     /// Sets the key for the server.
     ///
     /// # Arguments
+    ///
     /// * `key` - The key to set.
     ///
     /// # Returns
+    ///
     /// A new `VetisAdapterConfigBuilder` instance with the key set.
     pub fn key(mut self, key: Vec<u8>) -> Self {
         self.key = Some(key);
@@ -101,18 +117,35 @@ impl VetisAdapterConfigBuilder {
     /// Sets the CA certificate for the server.
     ///
     /// # Arguments
+    ///
     /// * `ca` - The CA certificate to set.
     ///
     /// # Returns
+    ///
     /// A new `VetisAdapterConfigBuilder` instance with the CA certificate set.
     pub fn ca(mut self, ca: Vec<u8>) -> Self {
         self.ca = Some(ca);
         self
     }
 
+    /// Sets the allow_unsafe_connections for the server.
+    ///
+    /// # Arguments
+    ///
+    /// * `allow_unsafe_connections` - The allow_unsafe_connections to set.
+    ///
+    /// # Returns
+    ///
+    /// A new `VetisAdapterConfigBuilder` instance with the allow_unsafe_connections set.
+    pub fn allow_unsafe_connections(mut self, allow_unsafe_connections: bool) -> Self {
+        self.allow_unsafe_connections = allow_unsafe_connections;
+        self
+    }
+
     /// Builds the VetisAdapterConfig from the builder.
     ///
     /// # Returns
+    ///
     /// A new `VetisAdapterConfig` instance.
     pub fn build(self) -> VetisAdapterConfig {
         VetisAdapterConfig {
@@ -123,6 +156,7 @@ impl VetisAdapterConfigBuilder {
             cert: self.cert,
             key: self.key,
             ca: self.ca,
+            allow_unsafe_connections: self.allow_unsafe_connections,
         }
     }
 }
@@ -137,18 +171,20 @@ pub struct VetisAdapterConfig {
     cert: Option<Vec<u8>>,
     key: Option<Vec<u8>>,
     ca: Option<Vec<u8>>,
+    allow_unsafe_connections: bool,
 }
 
 impl Default for VetisAdapterConfig {
     /// Creates a default configuration for the Vetis adapter.
     ///
     /// This function sets up a basic server configuration with:
-    /// - Hostname: "localhost"
+    ///
     /// - Interface: "0.0.0.0"
     /// - Port: random port between 9000 and 65535
     /// - No TLS certificates (HTTP only)
     ///
     /// # Returns
+    ///
     /// A default `VetisAdapterConfig` instance.
     fn default() -> Self {
         Self {
@@ -157,10 +193,11 @@ impl Default for VetisAdapterConfig {
                 .parse()
                 .unwrap(),
             protos: vec![Version::HTTP_11],
-            port: generate_randon_port(),
+            port: 0,
             cert: None,
             key: None,
             ca: None,
+            allow_unsafe_connections: false,
         }
     }
 }
@@ -169,12 +206,13 @@ impl VetisAdapterConfig {
     /// Creates a new builder for the Vetis adapter configuration.
     ///
     /// This function sets up a basic server configuration with:
-    /// - Hostname: "localhost"
+    ///
     /// - Interface: "0.0.0.0"
     /// - Port: random port between 9000 and 65535
     /// - No TLS certificates (HTTP only)
     ///
     /// # Returns
+    ///
     /// A new `VetisAdapterConfigBuilder` instance.
     pub fn builder() -> VetisAdapterConfigBuilder {
         VetisAdapterConfigBuilder {
@@ -183,33 +221,55 @@ impl VetisAdapterConfig {
                 .parse()
                 .unwrap(),
             protos: vec![Version::HTTP_11],
-            port: rand::random_range(9000..65535),
+            port: 0,
             cert: None,
             key: None,
             ca: None,
+            allow_unsafe_connections: false,
         }
     }
 
-    /// Returns the hostname of the server.
+    /// Returns server hostname.
     ///
     /// # Returns
-    /// The hostname of the server.
+    ///
+    /// The server hostname.
     pub fn hostname(&self) -> &String {
         &self.hostname
     }
 
-    /// Returns the interface of the server.
+    /// Returns server network interface.
     ///
     /// # Returns
-    /// The interface of the server.
+    ///
+    /// The server network interface.
     pub fn interface(&self) -> &IpAddr {
         &self.interface
     }
 
-    /// Returns the port of the server.
+    /// Indicates if a unsafe connection is allowed.
     ///
     /// # Returns
-    /// The port of the server.
+    ///
+    /// True if unsafe connection is allowed, false otherwise.
+    pub fn allow_unsafe_connections(&self) -> bool {
+        self.allow_unsafe_connections
+    }
+
+    /// Returns server supported protocols.
+    ///
+    /// # Returns
+    ///
+    /// A vector of supported protocols.
+    pub fn protos(&self) -> &Vec<Version> {
+        &self.protos
+    }
+
+    /// Returns server port.
+    ///
+    /// # Returns
+    ///
+    /// The port server port.
     pub fn port(&self) -> u16 {
         self.port
     }
@@ -217,56 +277,34 @@ impl VetisAdapterConfig {
     /// Returns the certificate of the server.
     ///
     /// # Returns
-    /// The certificate of the server.
+    /// The server certificate.
     pub fn cert(&self) -> &Option<Vec<u8>> {
         &self.cert
     }
 
-    /// Returns the key of the server.
+    /// Returns server key.
     ///
     /// # Returns
-    /// The key of the server.
+    /// The server key.
     pub fn key(&self) -> &Option<Vec<u8>> {
         &self.key
     }
 
-    /// Returns the CA certificate of the server.
+    /// Returns server CA certificate.
     ///
     /// # Returns
-    /// The CA certificate of the server.
+    /// The server CA certificate.
     pub fn ca(&self) -> &Option<Vec<u8>> {
         &self.ca
-    }
-}
-
-impl From<VetisAdapterConfig> for ServerConfig {
-    fn from(config: VetisAdapterConfig) -> Self {
-        let listener_config = vetis_smol::ListenerConfig::builder()
-            .interface(config.interface)
-            .protos(config.protos)
-            .port(config.port)
-            .build()
-            .expect("Failed to build listener config");
-        ServerConfig::builder()
-            .add_listener(listener_config)
-            .build()
-            .expect("Failed to build server config")
     }
 }
 
 #[derive(Default)]
 /// Vetis adapter implementation
 pub struct VetisAdapter {
-    server: Vetis,
+    server: Option<Vetis>,
     config: VetisAdapterConfig,
     mock: Option<Arc<Mock>>,
-}
-
-impl PortGenerator<VetisAdapter> for VetisAdapterConfigBuilder {
-    fn with_random_port(self) -> Self {
-        let port = generate_randon_port();
-        self.port(port)
-    }
 }
 
 impl ServerAdapter for VetisAdapter {
@@ -281,13 +319,7 @@ impl ServerAdapter for VetisAdapter {
     /// # Returns
     /// A new `VetisAdapter` instance.
     fn new(config: Self::Config) -> Result<Self, EasyHttpMockError> {
-        let vetis_config = config
-            .clone()
-            .into();
-
-        let server = Vetis::new(vetis_config);
-
-        Ok(Self { server, config, mock: None })
+        Ok(Self { server: None, config, mock: None })
     }
 
     /// Returns the hostname of the server.
@@ -306,16 +338,26 @@ impl ServerAdapter for VetisAdapter {
     /// The base URL of the server.
     fn base_url(&self) -> String {
         let hostname = self.hostname();
-
-        if self
+        let scheme = if self
             .config
             .cert
             .is_some()
         {
-            format!("https://{}:{}", hostname, self.config.port())
+            "https"
         } else {
-            format!("http://{}:{}", hostname, self.config.port())
-        }
+            "http"
+        };
+
+        // Always pick the port assigned to first listener
+        let port = if let Some(server) = &self.server {
+            server.listeners()[0]
+                .config()
+                .port()
+        } else {
+            60000
+        };
+
+        format!("{scheme}://{}:{}", hostname, port)
     }
 
     /// Returns the configuration of the server.
@@ -326,10 +368,10 @@ impl ServerAdapter for VetisAdapter {
         &self.config
     }
 
-    /// Returns the configuration of the server.
+    /// Returns a mutable reference to the configuration of the server.
     ///
     /// # Returns
-    /// The configuration of the server.
+    /// A mutable reference to the configuration of the server.
     fn config_mut(&mut self) -> &mut Self::Config {
         &mut self.config
     }
@@ -367,7 +409,7 @@ impl ServerAdapter for VetisAdapter {
         let mock_clone = mock.clone();
         let path = HandlerPath::builder()
             .uri("/")
-            .handler(handler_fn(move |request| {
+            .handler(handler_fn(move |request, _context| {
                 // Since handler function is defined here, we need to clone the mocker
                 // to move it into the async block
                 let mock = mock_clone.clone();
@@ -376,14 +418,12 @@ impl ServerAdapter for VetisAdapter {
 
                     let mut data = Vec::<u8>::new();
                     let Ok(body_data) = body.collect().await else {
-                        return Err(vetis_smol::errors::VetisError::Handler(
-                            "Failed to collect body".to_string(),
-                        ));
+                        return Err(VetisError::Handler("Failed to collect body".to_string()));
                     };
 
                     data.extend_from_slice(&body_data.to_bytes());
 
-                    expect(Request::from_parts(parts)).to_match(
+                    expect(Request::from_parts(parts, data.into())).to_match(
                         mock.request()
                             .matcher()
                             .clone(),
@@ -395,22 +435,45 @@ impl ServerAdapter for VetisAdapter {
 
                     if let Some(respond) = respond {
                         Ok(Response::builder()
-                            .status(respond.status_code())
+                            .status(*respond.status_code())
                             .bytes(&respond.body()))
                     } else {
-                        Err(vetis_smol::errors::VetisError::Handler(
-                            "Missing respond mock".to_string(),
-                        ))
+                        Err(VetisError::Handler("Missing respond mock".to_string()))
                     }
                 }
             }))
-            .build();
+            .build()
+            .map_err(|e| EasyHttpMockError::Server(ServerError::Creation(e.to_string())))?;
 
         let hostname = self.hostname();
+        let host_config = vetis_smol::HostConfig::builder()
+            .hostname(&hostname)
+            .protos(
+                &self
+                    .config
+                    .protos()
+                    .clone(),
+            )
+            .allow_unsafe_connections(
+                self.config
+                    .allow_unsafe_connections(),
+            )
+            .bind_addresses(&[(
+                *self
+                    .config
+                    .interface(),
+                0,
+            )])
+            .build()
+            .map_err(|e| EasyHttpMockError::Server(ServerError::Creation(e.to_string())))?;
 
-        let host_config = vetis_smol::HostConfig::builder().hostname(&hostname);
+        let mut host = Host::new(host_config)
+            .await
+            .map_err(|e| EasyHttpMockError::Server(ServerError::Creation(e.to_string())))?;
 
-        let host_config = if let Some(((cert, key), ca)) = self
+        host.add_path(path);
+
+        if let Some(((cert, key), ca)) = self
             .config
             .cert
             .as_ref()
@@ -423,38 +486,25 @@ impl ServerAdapter for VetisAdapter {
                 self.config
                     .ca
                     .as_ref(),
-            ) {
-            host_config.security(
-                vetis_smol::SecurityConfig::builder()
-                    .cert_from_bytes(cert.clone())
-                    .key_from_bytes(key.clone())
-                    .ca_cert_from_bytes(ca.clone())
-                    .build()
-                    .map_err(|e| EasyHttpMockError::Server(ServerError::Config(e.to_string())))?,
             )
-        } else {
-            host_config
-        };
-
-        let host_config = host_config
-            .build()
-            .map_err(|e| EasyHttpMockError::Server(ServerError::Creation(e.to_string())))?;
-
-        let mut host = HostImpl::new(host_config);
-        if let Err(e) = path {
-            return Err(EasyHttpMockError::Server(ServerError::Creation(e.to_string())));
+        {
+            host.add_tls(Tls::from_cert_and_key(cert, key).with_ca(ca));
         }
 
-        host.add_path(path.unwrap());
-
-        self.server
+        let mut server = Vetis::builder()
             .add_host(host)
-            .await;
+            .await
+            .map_err(|e| EasyHttpMockError::Server(ServerError::Start(e.to_string())))?
+            .build();
 
-        self.server
+        server
             .start()
             .await
-            .map_err(|e| EasyHttpMockError::Server(ServerError::Start(e.to_string())))
+            .map_err(|e| EasyHttpMockError::Server(ServerError::Start(e.to_string())))?;
+
+        self.server = Some(server);
+
+        Ok(())
     }
 
     /// Stops the server.
@@ -462,7 +512,13 @@ impl ServerAdapter for VetisAdapter {
     /// # Returns
     /// A result indicating whether the server stopped successfully.
     async fn stop(&mut self) -> HttpMockResult<()> {
-        self.server
+        let Some(server) = self.server.take() else {
+            return Err(EasyHttpMockError::Server(ServerError::Stop(
+                "Server not running".to_string(),
+            )));
+        };
+
+        server
             .stop()
             .await
             .map_err(|e| EasyHttpMockError::Server(ServerError::Stop(e.to_string())))
