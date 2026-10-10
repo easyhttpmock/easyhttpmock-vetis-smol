@@ -802,6 +802,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 [[package]]
 name = "easyhttpmock"
 version = "0.1.5-beta.2"
+source = "git+https://github.com/easyhttpmock/easyhttpmock.git#84794c20ae9642723fbe4a3bb184e793a3bc5534"
 dependencies = [
  "bytes",
  "caramelo",
