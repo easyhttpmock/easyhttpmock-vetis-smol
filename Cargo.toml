@@ -1,6 +1,6 @@
 [package]
 name = "easyhttpmock-vetis-smol"
-version = "0.1.1"
+version = "0.1.2-beta.1"
 edition = "2021"
 authors = ["Rogerio Araújo <rogerio.araujo@gmail.com>"]
 repository = "https://github.com/ararog/easyhttpmock"
@@ -29,22 +29,13 @@ http3 = ["vetis-smol/http3"]
 rust-tls = ["vetis-smol/rust-tls"]
 
 [dependencies]
-#caramelo = { version = "0.1.5" }
-#easyhttpmock = { version = "0.1.5-beta.2" }
-# vetis-smol = { version = "0.1.2-beta.4", features = [
-#   "http2",
-#   #"http3",
-#   "rust-tls",
-# ], default-features = false }
-
-caramelo = { git = "https://github.com/ararog/caramelo.git" }
-easyhttpmock = { git = "https://github.com/easyhttpmock/easyhttpmock.git" }
-vetis-smol = { git = "https://github.com/vetis-server/vetis-smol.git", features = [
+caramelo = { version = "0.1.5" }
+easyhttpmock = { version = "0.1.5-beta.2" }
+vetis-smol = { version = "0.1.2-beta.1", features = [
   "http2",
   #"http3",
   "rust-tls",
 ], default-features = false }
-
 http = "1.5.0"
 http-body-util = "0.1.5"
 macro_rules_attribute = "0.2.2"
@@ -53,23 +44,13 @@ smol = { version = "2.0.2", default-features = false }
 smol-macros = { version = "0.1.1", default-features = false }
 
 [dev-dependencies]
-#deboa = { version = "0.1.5-beta.2" }
-# deboa-smol = { version = "0.1.4-beta.3", default-features = false, features = [
-#   "http2",
-#   #"http3",
-#   "rust-tls",
-#   "default-rustls-provider",
-#   "default-rustls-verifier",
-# ] }
-
-deboa = { git = "https://github.com/deboa-client/deboa.git" }
-deboa-smol = { git = "https://github.com/deboa-client/deboa-smol.git", default-features = false, features = [
+deboa = { version = "0.1.5-beta.3" }
+deboa-smol = { version = "0.1.4-beta.2", default-features = false, features = [
   "http2",
   #"http3",
   "rust-tls",
   "default-rustls-provider",
   "default-rustls-verifier",
 ] }
-
 smol = { version = "2.0.2", default-features = false }
 smol-macros = { version = "0.1.1", default-features = false }
