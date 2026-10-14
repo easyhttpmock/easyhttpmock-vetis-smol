@@ -1,7 +1,7 @@
 [package]
 name = "easyhttpmock-vetis-smol"
 version = "0.1.2-beta.1"
-edition = "2021"
+edition = "2024"
 authors = ["Rogerio Araújo <rogerio.araujo@gmail.com>"]
 repository = "https://github.com/ararog/easyhttpmock"
 homepage = "https://github.com/ararog/easyhttpmock"
@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT OR Apache-2.0"
 keywords = ["http", "mock", "testing"]
 publish = true
-rust-version = "1.75.0"
+rust-version = "1.85.0"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -31,7 +31,7 @@ rust-tls = ["vetis-smol/rust-tls"]
 [dependencies]
 caramelo = { version = "0.1.5" }
 easyhttpmock = { version = "0.1.5-beta.2" }
-vetis-smol = { version = "0.1.2-beta.1", features = [
+vetis-smol = { version = "0.1.2-beta.2", features = [
   "http2",
   #"http3",
   "rust-tls",
@@ -39,13 +39,11 @@ vetis-smol = { version = "0.1.2-beta.1", features = [
 http = "1.5.0"
 http-body-util = "0.1.5"
 macro_rules_attribute = "0.2.2"
-rand = { version = "0.10.2", default-features = false }
-smol = { version = "2.0.2", default-features = false }
 smol-macros = { version = "0.1.1", default-features = false }
 
 [dev-dependencies]
-deboa = { version = "0.1.5-beta.3" }
-deboa-smol = { version = "0.1.4-beta.2", default-features = false, features = [
+deboa = { version = "0.1.5-beta.5" }
+deboa-smol = { version = "0.1.4-beta.3", default-features = false, features = [
   "http2",
   #"http3",
   "rust-tls",
