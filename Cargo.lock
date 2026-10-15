@@ -456,9 +456,9 @@ dependencies = [
 
 [[package]]
 name = "deboa-smol"
-version = "0.1.4-beta.3"
+version = "0.1.4-beta.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c711782c4e16472d462ee5ca187476579ade6208e39a0c5e81707a3e8875ef9"
+checksum = "4e7f70c68035c331bf85c42d06db9d3b73b7cfe0dd36647aec3188b41982d4c9"
 dependencies = [
  "deboa",
  "deboa-tls",
@@ -544,7 +544,7 @@ dependencies = [
 
 [[package]]
 name = "easyhttpmock-vetis-smol"
-version = "0.1.2-beta.1"
+version = "0.1.2-beta.3"
 dependencies = [
  "caramelo",
  "deboa",
@@ -2427,9 +2427,9 @@ dependencies = [
 
 [[package]]
 name = "vetis-smol"
-version = "0.1.2-beta.2"
+version = "0.1.2-beta.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a123aa2b551c685223944e7b46835aa9757c34ae9e97e62c344fcb5308a4fca"
+checksum = "3012447e656094927ef76844fda407089dfb570c1a5ded2a9467635708dcf149"
 dependencies = [
  "bytes",
  "crossfire",
