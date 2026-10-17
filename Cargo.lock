@@ -418,23 +418,19 @@ dependencies = [
 
 [[package]]
 name = "deboa"
-version = "0.1.5-beta.6"
+version = "0.1.5-beta.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9a79c8cea89d7621a7b34a6395335646e6d2ead87a3a4291e795da352835308"
+checksum = "bbd4900884b33396090a6f70406d81dd361fcfc15a840968172269f8aa9aa883"
 dependencies = [
- "async-fn-stream",
  "async-lock",
  "base64",
  "bytes",
- "futures",
  "hashbrown",
  "http",
- "http-body",
  "http-body-util",
  "hyper",
  "hyper-body-utils",
  "log",
- "rand",
  "regex",
  "serde",
  "tackle",
@@ -445,9 +441,9 @@ dependencies = [
 
 [[package]]
 name = "deboa-smol"
-version = "0.1.4-beta.5"
+version = "0.1.4-beta.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3824324f90e7b2260d571df13d1abe579ec5d657e068b6c09c7e7247c1294cd5"
+checksum = "617a2a6f74fb57c189556d4943901d16b9d96e0a7fd10d94970c3f17bd925ff0"
 dependencies = [
  "deboa",
  "deboa-tls",
@@ -473,9 +469,9 @@ dependencies = [
 
 [[package]]
 name = "deboa-tls"
-version = "0.1.0-beta.4"
+version = "0.1.0-beta.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7888362295e39f4965bcbb863e864d6b9e21501ae4851477bcc65df048a82910"
+checksum = "6f71cee433cac4b3f44ef063fdf8fd6f55fc179ff7d2ddf3bb1ad7fd6c93f406"
 dependencies = [
  "deboa",
  "futures-io",
