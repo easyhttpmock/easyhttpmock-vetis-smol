@@ -7,7 +7,7 @@ use easyhttpmock::{
 };
 use http::Version;
 use http_body_util::BodyExt;
-use std::{net::IpAddr, sync::Arc};
+use std::{error::Error as _, net::IpAddr, sync::Arc};
 use vetis_smol::{
     errors::VetisError,
     host::{
@@ -417,9 +417,10 @@ impl ServerAdapter for VetisAdapter {
                     let (parts, body) = request.into_parts();
 
                     let mut data = Vec::<u8>::new();
-                    let Ok(body_data) = body.collect().await else {
-                        return Err(VetisError::Handler("Failed to collect body".to_string()));
-                    };
+                    // TODO: Handle buffered and streamed multipart forms
+                    let body_data = body.collect().await.map_err(|e| {
+                        VetisError::Handler(e.to_string())
+                    })?;
 
                     data.extend_from_slice(&body_data.to_bytes());
 
