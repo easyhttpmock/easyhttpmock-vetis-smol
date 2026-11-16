@@ -441,9 +441,9 @@ dependencies = [
 
 [[package]]
 name = "deboa-smol"
-version = "0.1.4-beta.6"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "617a2a6f74fb57c189556d4943901d16b9d96e0a7fd10d94970c3f17bd925ff0"
+checksum = "5c1957d09996a98bd9648e5844dd224811adc9d06dffa9f73c5558ea5bb70486"
 dependencies = [
  "deboa",
  "deboa-tls",
@@ -469,16 +469,14 @@ dependencies = [
 
 [[package]]
 name = "deboa-tls"
-version = "0.1.0-beta.5"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f71cee433cac4b3f44ef063fdf8fd6f55fc179ff7d2ddf3bb1ad7fd6c93f406"
+checksum = "b6ba7255803c2b5723a14f8c0ee3dfd72e00cb986bb996a0f9847ce9a7aa5a07"
 dependencies = [
  "deboa",
  "futures-io",
  "futures-rustls",
  "rustls",
- "rustls-native-certs",
- "rustls-pki-types",
  "webpki-roots",
 ]
 
@@ -2532,9 +2530,9 @@ dependencies = [
 
 [[package]]
 name = "webpki-roots"
-version = "1.0.9"
+version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dcd9d09a39985f5344844e66b0c530a33843579125f23e21e9f0f220850f22a"
+checksum = "7265c9301c16a8711c992c2d8da90ee77ef54b1ed51482d6dfeb00dc756b1297"
 dependencies = [
  "rustls-pki-types",
 ]
