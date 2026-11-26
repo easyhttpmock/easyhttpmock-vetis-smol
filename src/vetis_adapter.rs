@@ -7,7 +7,7 @@ use easyhttpmock::{
 };
 use http::Version;
 use http_body_util::BodyExt;
-use std::{error::Error as _, net::IpAddr, sync::Arc};
+use std::{net::IpAddr, sync::Arc};
 use vetis_smol::{
     errors::VetisError,
     host::{
